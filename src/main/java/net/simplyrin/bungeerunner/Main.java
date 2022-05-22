@@ -90,7 +90,7 @@ public class Main {
 	}
 
 	public String getStableBuildNumber() {
-		String url = "https://ci.md-5.net/job/BungeeCord/lastStableBuild/buildNumber";
+		String url = "https://ci.rin.pink/job/BungeeCord/lastStableBuild/buildNumber";
 		try {
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
@@ -131,7 +131,7 @@ public class Main {
 	}
 
 	public boolean downloadJar(File file) {
-		String url = "https://ci.md-5.net/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
+		String url = "https://ci.rin.pink/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
 		try {
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
