@@ -37,13 +37,27 @@ import org.apache.commons.io.FileUtils;
 public class Main {
 
 	public static void main(String[] args) {
-		new Main().run();
+		new Main(args).run();
 	}
+	
+	private final String[] args;
+	
+	public Main(String[] args) {
+		this.args = args;
+	}
+	
+	private String url = "https://ci.md-5.net";
 
 	private final File buildNumber = new File("StableBuildNumber.txt");
 	private final File bungeeCord = new File("BungeeCord.jar");
 
 	public void run() {
+		if (args.length > 0) {
+			this.url = args[0];
+		}
+		
+		System.out.println("ダウンロードサーバー: " + this.url);
+		
 		if (!this.buildNumber.exists()) {
 			System.out.println("最終安定ビルドの番号ファイルを作成しています...。");
 			try {
@@ -90,7 +104,7 @@ public class Main {
 	}
 
 	public String getStableBuildNumber() {
-		String url = "https://ci.rin.pink/job/BungeeCord/lastStableBuild/buildNumber";
+		String url = this.url + "/job/BungeeCord/lastStableBuild/buildNumber";
 		try {
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
@@ -131,7 +145,7 @@ public class Main {
 	}
 
 	public boolean downloadJar(File file) {
-		String url = "https://ci.rin.pink/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
+		String url = this.url + "/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
 		try {
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
