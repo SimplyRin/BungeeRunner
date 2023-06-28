@@ -47,16 +47,24 @@ public class Main {
 	}
 	
 	private String url = "https://ci.md-5.net";
+	private String job = "BungeeCord";
 
 	private final File buildNumber = new File("StableBuildNumber.txt");
-	private final File bungeeCord = new File("BungeeCord.jar");
+	private File bungeeCord;
 
 	public void run() {
-		if (args.length > 0) {
-			this.url = args[0];
+		if (this.args.length > 0) {
+			this.url = this.args[0];
 		}
 		
+		if (this.args.length > 1) {
+			this.job = this.args[1];
+		}
+		
+		this.bungeeCord = new File(this.job + ".jar");
+		
 		System.out.println("ダウンロードサーバー: " + this.url);
+		System.out.println("ジョブ名: " + this.job);
 		
 		if (!this.buildNumber.exists()) {
 			System.out.println("最終安定ビルドの番号ファイルを作成しています...。");
@@ -75,9 +83,9 @@ public class Main {
 		}
 
 		if (!this.bungeeCord.exists()) {
-			System.out.println("BungeeCord.jar をダウンロードしています...。");
+			System.out.println(this.bungeeCord.getName() + " をダウンロードしています...。");
 			this.downloadJar(this.bungeeCord);
-			System.out.println("BungeeCord.jar のダウンロードが完了しました。");
+			System.out.println(this.bungeeCord.getName() + " のダウンロードが完了しました。");
 		}
 
 		String number = this.getStableBuildNumber();
@@ -85,26 +93,26 @@ public class Main {
 		if (dlNumber == null) {
 			System.err.println("最終安定ビルド番号の取得に失敗しました。");
 		} else if (!number.equals(dlNumber)) {
-			System.out.println("BungeeCord のアップデートを確認しました。");
-			File target = new File("BungeeCord-v" + dlNumber + ".jar");
+			System.out.println(this.job + " のアップデートを確認しました。");
+			File target = new File(this.job + "-v" + dlNumber + ".jar");
 			this.bungeeCord.renameTo(target);
 			System.out.println(this.bungeeCord.getName() + " を " + target.getName() + " に変更しました。");
 
 			if (this.downloadJar(this.bungeeCord)) {
 				this.updateDownloadedBuildNumber();
-				System.out.println("BungeeCord.jar のダウンロードが完了しました。");
+				System.out.println(this.bungeeCord.getName() + " のダウンロードが完了しました。");
 			} else {
-				System.err.println("BungeeCord.jar のダウンロードに失敗しました。");
+				System.err.println(this.bungeeCord.getName() + " のダウンロードに失敗しました。");
 				target.renameTo(this.bungeeCord);
 				System.err.println(target.getName() + " を " + this.bungeeCord.getName() + " に変更しました。");
 			}
 		} else {
-			System.out.println("最新の BungeeCord を使用しています。v" + this.getDownloadedBuildNumber());
+			System.out.println("最新の " + this.job + " を使用しています。v" + this.getDownloadedBuildNumber());
 		}
 	}
 
 	public String getStableBuildNumber() {
-		String url = this.url + "/job/BungeeCord/lastStableBuild/buildNumber";
+		String url = this.url + "/job/" + this.job + "/lastStableBuild/buildNumber";
 		try {
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
