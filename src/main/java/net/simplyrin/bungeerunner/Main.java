@@ -4,12 +4,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Created by SimplyRin on 2021/02/15.
@@ -49,6 +55,8 @@ public class Main {
 	private String url = "https://ci.md-5.net";
 	private String job = "BungeeCord";
 
+	private String stableBuildNumber = null;
+
 	private final File buildNumber = new File("StableBuildNumber.txt");
 	private File bungeeCord;
 
@@ -65,15 +73,19 @@ public class Main {
 		
 		System.out.println("ダウンロードサーバー: " + this.url);
 		System.out.println("ジョブ名: " + this.job);
-		
+
 		if (!this.buildNumber.exists()) {
 			System.out.println("最終安定ビルドの番号ファイルを作成しています...。");
 			try {
 				this.buildNumber.createNewFile();
 
-				String number = this.getStableBuildNumber();
+				if (this.url.contains("github")) {
+					this.stableBuildNumber = this.getStableBuildNumberGitHub();
+				} else {
+					this.stableBuildNumber = this.getStableBuildNumber();
+				}
 				FileWriter fileWriter = new FileWriter(this.buildNumber);
-				fileWriter.write(number);
+				fileWriter.write(this.stableBuildNumber);
 				fileWriter.close();
 				System.out.println("最終安定ビルドの番号ファイルを作成しました。");
 			} catch (Exception e) {
@@ -84,21 +96,25 @@ public class Main {
 
 		if (!this.bungeeCord.exists()) {
 			System.out.println(this.bungeeCord.getName() + " をダウンロードしています...。");
-			this.downloadJar(this.bungeeCord);
+			this.downloadJar(this.bungeeCord, this.stableBuildNumber);
 			System.out.println(this.bungeeCord.getName() + " のダウンロードが完了しました。");
 		}
 
-		String number = this.getStableBuildNumber();
+		if (this.url.contains("github")) {
+			this.stableBuildNumber = this.getStableBuildNumberGitHub();
+		} else {
+			this.stableBuildNumber = this.getStableBuildNumber();
+		}
 		String dlNumber = this.getDownloadedBuildNumber();
 		if (dlNumber == null) {
 			System.err.println("最終安定ビルド番号の取得に失敗しました。");
-		} else if (!number.equals(dlNumber)) {
+		} else if (!this.stableBuildNumber.equals(dlNumber)) {
 			System.out.println(this.job + " のアップデートを確認しました。");
 			File target = new File(this.job + "-v" + dlNumber + ".jar");
 			this.bungeeCord.renameTo(target);
 			System.out.println(this.bungeeCord.getName() + " を " + target.getName() + " に変更しました。");
 
-			if (this.downloadJar(this.bungeeCord)) {
+			if (this.downloadJar(this.bungeeCord, this.stableBuildNumber)) {
 				this.updateDownloadedBuildNumber();
 				System.out.println(this.bungeeCord.getName() + " のダウンロードが完了しました。");
 			} else {
@@ -127,6 +143,26 @@ public class Main {
 		return null;
 	}
 
+	public String getStableBuildNumberGitHub() {
+		String url = this.url.replace("https://github.com/", "https://api.github.com/repos/") + "/releases";
+		try {
+			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
+			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+			connection.connect();
+
+			String result = IOUtils.toString(connection.getInputStream(), StandardCharsets.UTF_8);
+
+			JsonObject json = JsonParser.parseString( result ).getAsJsonArray().get( 0 ).getAsJsonObject();
+
+			String buildNumber = json.get( "tag_name" ).getAsString().replace( "v", "" );
+
+			return buildNumber;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public String getDownloadedBuildNumber() {
 		try {
 			FileReader fileReader = new FileReader(this.buildNumber);
@@ -143,7 +179,14 @@ public class Main {
 	public boolean updateDownloadedBuildNumber() {
 		try {
 			FileWriter fileWriter = new FileWriter(this.buildNumber);
-			fileWriter.write(this.getStableBuildNumber());
+
+			if (this.url.contains("github")) {
+				this.stableBuildNumber = this.getStableBuildNumberGitHub();
+			} else {
+				this.stableBuildNumber = this.getStableBuildNumber();
+			}
+
+			fileWriter.write(this.stableBuildNumber);
 			fileWriter.close();
 			return true;
 		} catch (Exception e) {
@@ -152,9 +195,14 @@ public class Main {
 		return false;
 	}
 
-	public boolean downloadJar(File file) {
-		String url = this.url + "/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
+	public boolean downloadJar(File file, String stableBuildNumber) {
 		try {
+			String url;
+			if (this.url.contains("github")) {
+				url = this.url + "/releases/download/v" + stableBuildNumber + "/BungeeCord.jar";
+			} else {
+				url = this.url + "/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar";
+			}
 			HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 			connection.addRequestProperty("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
 			connection.connect();
